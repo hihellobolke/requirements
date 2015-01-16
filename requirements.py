@@ -9,10 +9,12 @@ import argparse
 
 
 def parse_import_string(l):
-    i = re.match('\s*import\s*([a-zA-Z0-9].+)\s+as\s+.+$', l) or \
-        re.match('\s*import\s*([a-zA-Z0-9].+)$', l) or \
-        re.match('\s*from\s+([a-zA-Z0-9].+)\s+import .+', l)
+    l = l.strip().split('#')[0]
+    i = re.match('import\s*([a-zA-Z0-9][a-z0-9A-Z.-]+)\s+as\s+.+$', l) or \
+        re.match('import\s*([a-zA-Z0-9][a-z0-9A-Z. ,-]+)$', l) or \
+        re.match('from\s+([a-zA-Z0-9][^\s]+)\s+import [a-z0-9A-Z].*', l)
     if i:
+        # print "\t{}\t => {}".format(l, [_.split('.')[0] for _ in re.split("\s+", i.group(1).strip().replace(",", " "))])
         return [_.split('.')[0] for _ in re.split("\s+", i.group(1).strip().replace(",", " "))]
     return []
 
@@ -35,11 +37,12 @@ def list_imports_from_file(f, existing_modules=[]):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Guess requirements.txt for your python project by parsing ' +
-                                                 '"import.." string in python source code. Shows the modules that ' +
-                                                 'must be installed for your code to run.\n' +
-                                                 'Note: local module directories inside codebase dir' +
-                                                 'are not shown. By default modules in sys.path are also not shown.' +)
+    parser = argparse.ArgumentParser(
+        description='Guess requirements.txt for your python project by parsing ' +
+                    '"import.." string in python source code. Shows the modules that ' +
+                    'must be installed for your code to run.\n' +
+                    'Note: local module directories inside codebase dir' +
+                    'are not shown. By default modules in sys.path are also not shown.')
     parser.add_argument('directory', type=str, nargs="?", default=".",
                         help='path to directory containing your python project')
     parser.add_argument('--all', action="store_true", help="show all modules even ones that are available")
