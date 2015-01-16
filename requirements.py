@@ -7,7 +7,7 @@ import re
 import pkgutil
 import argparse
 
-# verb [filter] noun [filter]
+
 def parse_import_string(l):
     i = re.match('\s*import\s*([a-zA-Z0-9].+)\s+as\s+.+$', l) or \
         re.match('\s*import\s*([a-zA-Z0-9].+)$', l) or \
@@ -45,33 +45,31 @@ if __name__ == "__main__":
     parser.add_argument('--all', action="store_true", help="show all modules even ones that are available")
     args = parser.parse_args()
 
-    rootDir = args.directory
-    if args.all:
-        system_module_list = []
-    else:
-        system_module_list = [m[1] for m in pkgutil.iter_modules()]
+    system_module_list = []
     local_module_list = []
     imported_module_list = []
+
+    rootDir = os.path.abspath(args.directory)
+    if not args.all:
+        system_module_list = [m[1] for m in pkgutil.iter_modules()]
 
     for dirName, subdirList, fileList in os.walk(rootDir):
 
         # Ignore svn and test dir
-        if re.search('(\.svn|test)', dirName):
+        if os.path.basename(dirName)[0] == '.' or re.search('(test|\.bak)', os.path.basename(dirName)):
             continue
 
-        # print('Found directory: {}'.format(dirName))
-        # add dir containing __init__.py
+        # add dir containing __init__.py to ignore
         if "__init__.py" in fileList:
             local_module_list.append(os.path.basename(dirName))
 
-        importable_modules = system_module_list + subdirList + [f.replace(".py", "") for f in fileList if re.match('.+\.py', f)]
+        importable_modules = system_module_list + subdirList + [f.replace(".py", "") for f in fileList if
+                                                                re.match('.+\.py', f)]
 
         for fname in fileList:
             if not re.match('.*\.py', fname):
                 continue
             imported_module_list += list_imports_from_file(dirName + '/' + fname, existing_modules=importable_modules)
-            # print('\t\t{} -> {}'.format(fname, imported_module_in_file_list))
-
 
     imported_modules = set(imported_module_list) - set(local_module_list)
 
@@ -81,3 +79,4 @@ if __name__ == "__main__":
                 print(i)
         else:
             print(i)
+
